@@ -14,6 +14,8 @@ int APS5_VABI sceSystemGestureGetPrimitiveTouchEvents(std::int32_t, void*, std::
 int APS5_VABI sceSystemGestureGetPrimitiveTouchEventsCount(std::int32_t);
 int APS5_VABI sceSystemGestureGetTouchEvents(std::int32_t, const void*, void*, std::uint32_t, std::uint32_t*);
 int APS5_VABI sceSystemGestureGetPrimitiveTouchEventByIndex(std::int32_t, std::uint32_t, void*);
+int APS5_VABI sceSystemGestureGetPrimitiveTouchEventByPrimitiveID(std::int32_t, std::uint16_t, void*);
+int APS5_VABI sceSystemGestureGetTouchEventByEventID(std::int32_t, const void*, std::uint32_t, void*);
 int APS5_VABI sceSystemGestureAppendTouchRecognizer(std::int32_t, void*);
 int APS5_VABI sceSystemGestureCreateTouchRecognizer(std::int32_t, void*, std::int32_t, const void*, const void*);
 int APS5_VABI sceSystemGestureGetTouchRecognizerInformation(std::int32_t, const void*, void*);
@@ -109,6 +111,24 @@ int main() {
     Require(sceSystemGestureGetPrimitiveTouchEventByIndex(handle, 0, buffer.data()) == indexOutOfArray);
     Require(sceSystemGestureGetPrimitiveTouchEventByIndex(handle + 1, 0, buffer.data()) == invalidHandle);
     Require(buffer == original);
+
+    SystemGesturePrimitiveTouchEvent primitiveEvent;
+    std::memset(&primitiveEvent, 0x5a, sizeof(primitiveEvent));
+    const auto primitiveOriginal = primitiveEvent;
+    Require(sceSystemGestureGetPrimitiveTouchEventByPrimitiveID(handle, 0, &primitiveEvent) == indexOutOfArray);
+    Require(sceSystemGestureGetPrimitiveTouchEventByPrimitiveID(handle + 1, 0, &primitiveEvent) == invalidHandle);
+    Require(sceSystemGestureGetPrimitiveTouchEventByPrimitiveID(handle, 0, nullptr) == invalidArgument);
+    Require(std::memcmp(&primitiveEvent, &primitiveOriginal, sizeof(primitiveEvent)) == 0);
+
+    SystemGestureTouchEvent touchEvent;
+    std::memset(&touchEvent, 0x5a, sizeof(touchEvent));
+    const auto touchOriginal = touchEvent;
+    SystemGestureTouchRecognizer eventRecognizer{};
+    Require(sceSystemGestureGetTouchEventByEventID(handle, &eventRecognizer, 0, &touchEvent) == indexOutOfArray);
+    Require(sceSystemGestureGetTouchEventByEventID(handle + 1, &eventRecognizer, 0, &touchEvent) == invalidHandle);
+    Require(sceSystemGestureGetTouchEventByEventID(handle, nullptr, 0, &touchEvent) == invalidArgument);
+    Require(sceSystemGestureGetTouchEventByEventID(handle, &eventRecognizer, 0, nullptr) == invalidArgument);
+    Require(std::memcmp(&touchEvent, &touchOriginal, sizeof(touchEvent)) == 0);
 
     Require(sceSystemGestureAppendTouchRecognizer(handle, &recognizer) == 0);
     Require(sceSystemGestureRemoveTouchRecognizer(handle, &recognizer) == 0);
